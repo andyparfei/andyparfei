@@ -1,10 +1,1 @@
-.env
-.venv/
-.ruff_cache/
-
-# Python cache
-__pycache__/
-*.py[cod]
-
-.codex
-node_modules/
+.DS_Store

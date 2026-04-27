@@ -24,7 +24,7 @@ def _plural(value):
 def format_compact_number(value):
     if isinstance(value, str):
         normalized = value.replace(",", "").strip().upper()
-        if normalized.endswith("M") or normalized.endswith("K"):
+        if normalized.endswith(("M", "K")):
             return value
         value = int(normalized)
 

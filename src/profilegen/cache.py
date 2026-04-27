@@ -58,11 +58,13 @@ def cache_builder(edges, comment_size, force_cache, loc_fetcher, loc_add=0, loc_
 
             owner, repo_name = repository_name.split("/", 1)
             additions, deletions, my_commits = loc_fetcher(
-                owner, repo_name, cache_rows, cache_header,
+                owner,
+                repo_name,
+                cache_rows,
+                cache_header,
             )
             cache_rows[index] = (
-                f"{stored_hash} {current_commit_count} {my_commits} "
-                f"{additions} {deletions}\n"
+                f"{stored_hash} {current_commit_count} {my_commits} {additions} {deletions}\n"
             )
 
     with filename.open("w") as handle:

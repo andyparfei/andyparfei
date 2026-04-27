@@ -33,7 +33,9 @@ def main():
     print_duration("age calculation", age_time)
 
     total_loc, loc_time = perf_counter(
-        loc_query, ["OWNER", "COLLABORATOR", "ORGANIZATION_MEMBER"], config.COMMENT_BLOCK_SIZE,
+        loc_query,
+        ["OWNER", "COLLABORATOR", "ORGANIZATION_MEMBER"],
+        config.COMMENT_BLOCK_SIZE,
     )
     print_duration("LOC (cached)" if total_loc[-1] else "LOC (no cache)", loc_time)
 
@@ -47,7 +49,9 @@ def main():
     print_duration("repos", repo_time)
 
     contrib_data, contrib_time = perf_counter(
-        graph_repos_stars, "repos", ["OWNER", "COLLABORATOR", "ORGANIZATION_MEMBER"],
+        graph_repos_stars,
+        "repos",
+        ["OWNER", "COLLABORATOR", "ORGANIZATION_MEMBER"],
     )
     print_duration("contributed repos", contrib_time)
 
@@ -70,13 +74,28 @@ def main():
     total_loc[:-1] = [f"{value:,}" for value in total_loc[:-1]]
 
     update_svg_files(
-        age_data, commit_data, star_data, repo_data,
-        contrib_data, follower_data, total_loc[:-1], today_data, alltime_data,
+        age_data,
+        commit_data,
+        star_data,
+        repo_data,
+        contrib_data,
+        follower_data,
+        total_loc[:-1],
+        today_data,
+        alltime_data,
     )
 
     total_runtime = (
-        user_time + age_time + loc_time + commit_time + star_time
-        + repo_time + contrib_time + follower_time + today_time + alltime_time
+        user_time
+        + age_time
+        + loc_time
+        + commit_time
+        + star_time
+        + repo_time
+        + contrib_time
+        + follower_time
+        + today_time
+        + alltime_time
     )
     print(f"{'Total function time:':<21} {total_runtime:>11.4f} s")
     print(f"Total GitHub GraphQL API calls: {sum(config.QUERY_COUNT.values()):>3}")

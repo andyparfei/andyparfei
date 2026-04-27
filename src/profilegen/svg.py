@@ -45,8 +45,18 @@ def commit_stats_left_width(commit_data):
     return len(f". Commits:{build_dot_string(commit_text, config.COMMIT_DATA_WIDTH)}{commit_text}")
 
 
-def svg_overwrite(filename, age_data, commit_data, star_data, repo_data,
-                  contrib_data, follower_data, loc_data, today_data=None, alltime_data=None):
+def svg_overwrite(
+    filename,
+    age_data,
+    commit_data,
+    star_data,
+    repo_data,
+    contrib_data,
+    follower_data,
+    loc_data,
+    today_data=None,
+    alltime_data=None,
+):
     tree = parse(filename)
     root = tree.getroot()
 
@@ -59,8 +69,12 @@ def svg_overwrite(filename, age_data, commit_data, star_data, repo_data,
     justify_format(root, "loc_data", loc_data[2], config.LOC_DATA_WIDTH)
     justify_format(root, "loc_add", format_compact_number(loc_data[0]))
     justify_format(root, "loc_del", format_compact_number(loc_data[1]), 5)
-    find_and_replace(root, "repo_stats_gap", secondary_stat_gap(repo_stats_left_width(repo_data, contrib_data)))
-    find_and_replace(root, "commit_stats_gap", secondary_stat_gap(commit_stats_left_width(commit_data)))
+    find_and_replace(
+        root, "repo_stats_gap", secondary_stat_gap(repo_stats_left_width(repo_data, contrib_data))
+    )
+    find_and_replace(
+        root, "commit_stats_gap", secondary_stat_gap(commit_stats_left_width(commit_data))
+    )
 
     if today_data is not None:
         justify_format(root, "today_commits", today_data["commits"], config.TODAY_COMMITS_WIDTH)
@@ -81,8 +95,27 @@ def svg_overwrite(filename, age_data, commit_data, star_data, repo_data,
     tree.write(filename, encoding="utf-8", xml_declaration=True)
 
 
-def update_svg_files(age_data, commit_data, star_data, repo_data,
-                     contrib_data, follower_data, loc_data, today_data=None, alltime_data=None):
+def update_svg_files(
+    age_data,
+    commit_data,
+    star_data,
+    repo_data,
+    contrib_data,
+    follower_data,
+    loc_data,
+    today_data=None,
+    alltime_data=None,
+):
     for svg_file in config.SVG_FILES:
-        svg_overwrite(svg_file, age_data, commit_data, star_data, repo_data,
-                      contrib_data, follower_data, loc_data, today_data, alltime_data)
+        svg_overwrite(
+            svg_file,
+            age_data,
+            commit_data,
+            star_data,
+            repo_data,
+            contrib_data,
+            follower_data,
+            loc_data,
+            today_data,
+            alltime_data,
+        )

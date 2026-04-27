@@ -86,7 +86,9 @@ def daily_contributions(username):
             }
         }
     }"""
-    data = graphql_request("daily_contributions", query, {"login": username, "from": from_date, "to": to_date})
+    data = graphql_request(
+        "daily_contributions", query, {"login": username, "from": from_date, "to": to_date}
+    )
     c = data["user"]["contributionsCollection"]
     return {
         "commits": c["totalCommitContributions"],
@@ -141,7 +143,11 @@ def graph_repos_stars(count_type, owner_affiliation):
 
     while True:
         config.query_count("graph_repos_stars")
-        variables = {"owner_affiliation": owner_affiliation, "login": config.USER_NAME, "cursor": cursor}
+        variables = {
+            "owner_affiliation": owner_affiliation,
+            "login": config.USER_NAME,
+            "cursor": cursor,
+        }
         data = graphql_request("graph_repos_stars", query, variables)
         repositories = data["user"]["repositories"]
         total_repositories = repositories["totalCount"]
@@ -157,8 +163,16 @@ def graph_repos_stars(count_type, owner_affiliation):
     return 0
 
 
-def recursive_loc(owner, repo_name, cache_rows, cache_header,
-                  addition_total=0, deletion_total=0, my_commits=0, cursor=None):
+def recursive_loc(
+    owner,
+    repo_name,
+    cache_rows,
+    cache_header,
+    addition_total=0,
+    deletion_total=0,
+    my_commits=0,
+    cursor=None,
+):
     config.query_count("recursive_loc")
     query = """
     query ($repo_name: String!, $owner: String!, $cursor: String) {
@@ -184,7 +198,9 @@ def recursive_loc(owner, repo_name, cache_rows, cache_header,
         }
     }"""
     variables = {"repo_name": repo_name, "owner": owner, "cursor": cursor}
-    data = graphql_request("recursive_loc", query, variables, partial_cache=(cache_rows, cache_header))
+    data = graphql_request(
+        "recursive_loc", query, variables, partial_cache=(cache_rows, cache_header)
+    )
     branch = data["repository"]["defaultBranchRef"]
 
     if branch is None:
@@ -203,8 +219,14 @@ def recursive_loc(owner, repo_name, cache_rows, cache_header,
         return addition_total, deletion_total, my_commits
 
     return recursive_loc(
-        owner, repo_name, cache_rows, cache_header,
-        addition_total, deletion_total, my_commits, history["pageInfo"]["endCursor"],
+        owner,
+        repo_name,
+        cache_rows,
+        cache_header,
+        addition_total,
+        deletion_total,
+        my_commits,
+        history["pageInfo"]["endCursor"],
     )
 
 
@@ -230,7 +252,11 @@ def loc_query(owner_affiliation, comment_size=0, force_cache=False):
     edges = []
     while True:
         config.query_count("loc_query")
-        variables = {"owner_affiliation": owner_affiliation, "login": config.USER_NAME, "cursor": cursor}
+        variables = {
+            "owner_affiliation": owner_affiliation,
+            "login": config.USER_NAME,
+            "cursor": cursor,
+        }
         data = graphql_request("loc_query", query, variables)
         repositories = data["user"]["repositories"]
         edges.extend(repositories["edges"])

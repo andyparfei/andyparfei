@@ -1,5 +1,10 @@
-"""Optimize asciify.svg, embed in profile SVGs, render full-card animated APNGs."""
+"""Optimize asciify.svg, embed in profile SVGs, render full-card animated APNGs.
 
+Strategy for APNG: render the static stats panel once, then composite
+animated portrait frames on top so the wave effect only touches the portrait.
+"""
+
+import io
 import math
 import re
 from collections import defaultdict
@@ -24,23 +29,23 @@ PORTRAIT_MAX_H = 420
 # Subsampling
 TARGET_COLS = 80
 
-# Color quantization
-NUM_COLORS = 256
-
 # Animation
 WAVE_DURATION = 6  # seconds for full wave cycle
 WAVE_ROWS = 8  # how many row-groups for staggered animation
-APNG_FRAMES = 12
-APNG_FRAME_DELAY_MS = 250
-APNG_WIDTH = 800
+APNG_FRAMES = 20
+APNG_FRAME_DELAY_MS = 150
 
-# Original asciify.svg cell spacing (pixels per character)
+# Original asciify.svg cell spacing
 ORIG_X_STEP = 6
 ORIG_Y_STEP = 12
 
-# Font metrics for ConsolasFallback (Consolas with size-adjust: 109%)
+# Font metrics for ConsolasFallback (size-adjust: 109%)
 CHAR_W_RATIO = 0.6 * 1.09  # ~0.654
 LINE_H_RATIO = 1.2
+
+# Render dimensions
+RENDER_W = 1024
+RENDER_H = 920
 
 
 def parse_asciify_svg(path: Path) -> tuple[list[list[tuple[int, int, str, str]]], int, int]:
@@ -82,18 +87,10 @@ def subsample_grid(
     orig_rows: int,
     target_cols: int,
 ) -> list[list[tuple[tuple[int, int, int], str]]]:
-    """Subsample the grid, preserving the original image aspect ratio.
-
-    The original cells are ORIG_X_STEP x ORIG_Y_STEP pixels, and the rendered
-    cells are CHAR_W_RATIO x LINE_H_RATIO em-units. We compute target_rows so
-    the rendered image matches the original aspect ratio.
-    """
-    # Original image dimensions in pixels
+    """Subsample the grid, preserving the original image aspect ratio."""
     img_w = orig_cols * ORIG_X_STEP
     img_h = orig_rows * ORIG_Y_STEP
 
-    # Compute target_rows to preserve aspect ratio:
-    # (target_cols * CHAR_W_RATIO) / (target_rows * LINE_H_RATIO) = img_w / img_h
     target_rows = round(target_cols * CHAR_W_RATIO * img_h / (LINE_H_RATIO * img_w))
     target_rows = max(1, min(target_rows, orig_rows))
 
@@ -133,9 +130,9 @@ def trim_background(
 
 
 def quantize_colors(
-    grid: list[list[tuple[tuple[int, int, int], str]]], n_colors: int
+    grid: list[list[tuple[tuple[int, int, int], str]]],
 ) -> tuple[list[list[tuple[int, str]]], list[tuple[int, int, int]]]:
-    """Quantize colors using fine uniform binning."""
+    """Quantize colors using fine uniform binning (16 levels per channel)."""
     all_colors = []
     for row in grid:
         for rgb, _ in row:
@@ -261,6 +258,16 @@ def embed_in_profile_svg(
         f.write(content)
 
 
+def _svg_to_pil(svg_content: str, width: int, height: int) -> Image.Image:
+    """Render SVG string to a Pillow RGB image."""
+    png_bytes = cairosvg.svg2png(
+        bytestring=svg_content.encode("utf-8"),
+        output_width=width,
+        output_height=height,
+    )
+    return Image.open(io.BytesIO(png_bytes)).convert("RGBA")
+
+
 def render_svg_to_apng(
     svg_path: str,
     output_path: Path,
@@ -269,19 +276,43 @@ def render_svg_to_apng(
     wave_duration: float,
     wave_rows: int,
 ) -> None:
-    """Render the full profile SVG to animated APNG by baking wave animation into frames."""
+    """Render the full profile SVG to animated APNG.
+
+    The stats panel is rendered once as a static layer. The portrait is
+    rendered per-frame with varying opacity, then composited on top.
+    Only the portrait area animates; everything else stays crisp.
+    """
     with open(svg_path) as f:
         svg_content = f.read()
 
-    width = APNG_WIDTH
-    height = round(APNG_WIDTH * 920 / 1024)
+    # --- 1. Render static base: SVG with portrait at full opacity, no animation ---
+    static_svg = svg_content
+    for i in range(wave_rows):
+        delay = (wave_duration / wave_rows) * i
+        old_rule = (
+            f".w{i} {{animation: wave {wave_duration}s "
+            f"ease-in-out {delay:.2f}s infinite;}}"
+        )
+        static_svg = static_svg.replace(old_rule, f".w{i} {{opacity: 1;}}")
+    base_img = _svg_to_pil(static_svg, RENDER_W, RENDER_H)
 
+    # --- 2. Render a version with portrait hidden (opacity 0) for the static layer ---
+    no_portrait_svg = svg_content
+    for i in range(wave_rows):
+        delay = (wave_duration / wave_rows) * i
+        old_rule = (
+            f".w{i} {{animation: wave {wave_duration}s "
+            f"ease-in-out {delay:.2f}s infinite;}}"
+        )
+        no_portrait_svg = no_portrait_svg.replace(old_rule, f".w{i} {{opacity: 0;}}")
+    static_layer = _svg_to_pil(no_portrait_svg, RENDER_W, RENDER_H)
+
+    # --- 3. For each frame, render portrait at its wave opacity and composite ---
     frames: list[Image.Image] = []
 
     for frame_i in range(n_frames):
         t = frame_i / n_frames * wave_duration
 
-        # Replace CSS animation classes with static opacity values for this frame
         frame_svg = svg_content
         for i in range(wave_rows):
             delay = (wave_duration / wave_rows) * i
@@ -289,27 +320,26 @@ def render_svg_to_apng(
             phase = (elapsed % wave_duration) / wave_duration
             opacity = 0.6 + 0.4 * (0.5 + 0.5 * math.sin(2 * math.pi * phase))
 
-            # Replace the animation rule with a static opacity
             old_rule = (
                 f".w{i} {{animation: wave {wave_duration}s "
                 f"ease-in-out {delay:.2f}s infinite;}}"
             )
-            new_rule = f".w{i} {{opacity: {opacity:.3f};}}"
-            frame_svg = frame_svg.replace(old_rule, new_rule)
+            frame_svg = frame_svg.replace(old_rule, f".w{i} {{opacity: {opacity:.3f};}}")
 
-        # Render SVG to PNG bytes
-        png_bytes = cairosvg.svg2png(
-            bytestring=frame_svg.encode("utf-8"),
-            output_width=width,
-            output_height=height,
-        )
+        portrait_frame = _svg_to_pil(frame_svg, RENDER_W, RENDER_H)
 
-        frame_img = Image.open(__import__("io").BytesIO(png_bytes)).convert("RGB")
-        # Convert to palette mode for much smaller file size
-        frame_img = frame_img.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
-        frames.append(frame_img)
+        # Composite: start with static layer (portrait hidden), paste portrait frame on top
+        # The static layer has full stats but no portrait; the portrait frame has both.
+        # We use the static layer as base and only take the portrait region from the frame.
+        composite = static_layer.copy()
+        # Portrait region: left side of the card (x=0..385, y=0..RENDER_H)
+        portrait_box = (0, 0, 385, RENDER_H)
+        portrait_region = portrait_frame.crop(portrait_box)
+        composite.paste(portrait_region, portrait_box)
 
-    # Save as APNG using Pillow
+        frames.append(composite.convert("RGB"))
+
+    # Save as APNG (full quality, no palette reduction)
     frames[0].save(
         output_path,
         save_all=True,
@@ -334,8 +364,8 @@ def main() -> None:
     actual_cols = max(len(r) for r in grid) if grid else 0
     print(f"  After trim: {actual_cols}x{len(grid)}")
 
-    print(f"Quantizing colors...")
-    indexed_grid, palette = quantize_colors(grid, NUM_COLORS)
+    print("Quantizing colors...")
+    indexed_grid, palette = quantize_colors(grid)
     print(f"  Palette: {len(palette)} colors")
 
     print("Generating portrait SVG snippet...")
@@ -357,7 +387,7 @@ def main() -> None:
         size = Path(svg_file).stat().st_size
         print(f"  {svg_file}: {size / 1024:.1f} KB")
 
-    print("Rendering full-card APNGs...")
+    print("Rendering full-card APNGs (portrait animated, stats static)...")
     for svg_file, apng_path in [
         ("dark_mode.svg", APNG_DARK),
         ("light_mode.svg", APNG_LIGHT),

@@ -531,6 +531,7 @@ def svg_overwrite(
     follower_data,
     loc_data,
     today_data=None,
+    alltime_data=None,
 ):
     tree = parse(filename)
     root = tree.getroot()
@@ -560,6 +561,11 @@ def svg_overwrite(
         justify_format(root, "today_prs", today_data["prs"], TODAY_PRS_WIDTH)
         justify_format(root, "today_issues", today_data["issues"])
         justify_format(root, "today_reviews", today_data["reviews"])
+    if alltime_data is not None:
+        justify_format(root, "commit_data", alltime_data["commits"], TODAY_COMMITS_WIDTH)
+        justify_format(root, "alltime_prs", alltime_data["prs"], TODAY_PRS_WIDTH)
+        justify_format(root, "alltime_issues", alltime_data["issues"])
+        justify_format(root, "alltime_reviews", alltime_data["reviews"])
     tree.write(filename, encoding="utf-8", xml_declaration=True)
 
 
@@ -693,6 +699,30 @@ def daily_contributions(username):
     }
 
 
+# Fetch all-time (contribution year) stats for the All Time section.
+def alltime_contributions(username):
+    query_count("daily_contributions")
+    query = """
+    query($login: String!) {
+        user(login: $login) {
+            contributionsCollection {
+                totalCommitContributions
+                totalPullRequestContributions
+                totalIssueContributions
+                totalPullRequestReviewContributions
+            }
+        }
+    }"""
+    data = graphql_request("alltime_contributions", query, {"login": username})
+    collection = data["user"]["contributionsCollection"]
+    return {
+        "commits": collection["totalCommitContributions"],
+        "prs": collection["totalPullRequestContributions"],
+        "issues": collection["totalIssueContributions"],
+        "reviews": collection["totalPullRequestReviewContributions"],
+    }
+
+
 # Fetch the follower count shown on the SVG card.
 def follower_getter(username):
     query_count("follower_getter")
@@ -736,6 +766,7 @@ def update_svg_files(
     follower_data,
     loc_data,
     today_data=None,
+    alltime_data=None,
 ):
     for svg_file in SVG_FILES:
         svg_overwrite(
@@ -748,6 +779,7 @@ def update_svg_files(
             follower_data,
             loc_data,
             today_data,
+            alltime_data,
         )
 
 
@@ -801,6 +833,9 @@ def main():
     today_data, today_time = perf_counter(daily_contributions, USER_NAME)
     print_duration("daily stats", today_time)
 
+    alltime_data, alltime_time = perf_counter(alltime_contributions, USER_NAME)
+    print_duration("alltime stats", alltime_time)
+
     # Only this specific user has deleted-repository stats tracked in the archive file.
     if OWNER_ID == ARCHIVE_USER_ID:
         archived_data = add_archive()
@@ -821,6 +856,7 @@ def main():
         follower_data,
         total_loc[:-1],
         today_data,
+        alltime_data,
     )
 
     total_runtime = (
@@ -833,6 +869,7 @@ def main():
         + contrib_time
         + follower_time
         + today_time
+        + alltime_time
     )
     print(f"{'Total function time:':<21} {total_runtime:>11.4f} s")
     print(f"Total GitHub GraphQL API calls: {sum(QUERY_COUNT.values()):>3}")

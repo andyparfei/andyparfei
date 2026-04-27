@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" font-family="ConsolasFallback,Consolas,monospace" width="1024px" height="650px" font-size="16px">
+<svg xmlns="http://www.w3.org/2000/svg" font-family="ConsolasFallback,Consolas,monospace" width="1024px" height="670px" font-size="16px">
 <style>
 @font-face {
 src: local('Consolas'), local('Consolas Bold');
@@ -15,29 +15,29 @@ size-adjust: 109%;
 .cc {fill: #c2cfde;}
 text, tspan {white-space: pre;}
 </style>
-<rect width="1024px" height="650px" fill="#f6f8fa" rx="15"/>
+<rect width="1024px" height="670px" fill="#f6f8fa" rx="15"/>
 <text x="15" y="30" fill="#24292f" class="ascii">
 <tspan x="15" y="30">                                       </tspan>
 <tspan x="15" y="50">                                       </tspan>
 <tspan x="15" y="70">                                       </tspan>
 <tspan x="15" y="90">                                       </tspan>
-<tspan x="15" y="110">                        _              </tspan>
-<tspan x="15" y="130">                       | |             </tspan>
-<tspan x="15" y="150">         __ _ _ __   __| |_   _        </tspan>
-<tspan x="15" y="170">        / _` | '_ \ / _` | | | |       </tspan>
-<tspan x="15" y="190">       | (_| | | | | (_| | |_| |       </tspan>
-<tspan x="15" y="210">        \__,_|_| |_|\__,_|\__, |       </tspan>
-<tspan x="15" y="230">                           __/ |       </tspan>
-<tspan x="15" y="250">                          |___/        </tspan>
+<tspan x="15" y="110">                                       </tspan>
+<tspan x="15" y="130">                                       </tspan>
+<tspan x="15" y="150">                          __           </tspan>
+<tspan x="15" y="170">         ____ _____  ____/ /_  __      </tspan>
+<tspan x="15" y="190">        / __ `/ __ \/ __  / / / /      </tspan>
+<tspan x="15" y="210">       / /_/ / / / / /_/ / /_/ /       </tspan>
+<tspan x="15" y="230">       \__,_/_/ /_/\__,_/\__, /        </tspan>
+<tspan x="15" y="250">                        /____/         </tspan>
 <tspan x="15" y="270">                                       </tspan>
-<tspan x="15" y="290">                         __     _      </tspan>
-<tspan x="15" y="310">                        / _|   (_)     </tspan>
-<tspan x="15" y="330">       _ __   __ _ _ __| |_ ___ _      </tspan>
-<tspan x="15" y="350">      | '_ \ / _` | '__|  _/ _ \ |     </tspan>
-<tspan x="15" y="370">      | |_) | (_| | |  | ||  __/ |     </tspan>
-<tspan x="15" y="390">      | .__/ \__,_|_|  |_| \___|_|     </tspan>
-<tspan x="15" y="410">      | |                              </tspan>
-<tspan x="15" y="430">      |_|                              </tspan>
+<tspan x="15" y="290">                         ____     _    </tspan>
+<tspan x="15" y="310">       ____  ____ ______/ __/__  (_)   </tspan>
+<tspan x="15" y="330">      / __ \/ __ `/ ___/ /_/ _ \/ /    </tspan>
+<tspan x="15" y="350">     / /_/ / /_/ / /  / __/  __/ /     </tspan>
+<tspan x="15" y="370">    / .___/\__,_/_/  /_/  \___/_/      </tspan>
+<tspan x="15" y="390">   /_/                                 </tspan>
+<tspan x="15" y="410">                                       </tspan>
+<tspan x="15" y="430">                                       </tspan>
 <tspan x="15" y="450">                                       </tspan>
 <tspan x="15" y="470">                                       </tspan>
 <tspan x="15" y="490">                                       </tspan>
@@ -48,7 +48,7 @@ text, tspan {white-space: pre;}
 <tspan x="390" y="50" class="cc">. </tspan><tspan class="key">OS</tspan>:<tspan class="cc"> ............................ </tspan><tspan class="value">Linux (Pop!_OS 22.04 LTS)</tspan>
 <tspan x="390" y="70" class="cc">. </tspan><tspan class="key">Uptime</tspan>:<tspan class="cc" id="age_data_dots"> ...................... </tspan><tspan class="value" id="age_data">40 years, 2 months, 22 days</tspan>
 <tspan x="390" y="90" class="cc">. </tspan><tspan class="key">Host</tspan>:<tspan class="cc"> ........................... </tspan><tspan class="value">Nakatomi Corporation</tspan>
-<tspan x="390" y="110" class="cc">. </tspan><tspan class="key">Kernel</tspan>:<tspan class="cc"> ........ </tspan><tspan class="value">Student (Paul Cornu High School) Operator</tspan>
+<tspan x="390" y="110" class="cc">. </tspan><tspan class="key">Kernel</tspan>:<tspan class="cc"> .................. </tspan><tspan class="value">University of Turku</tspan>
 <tspan x="390" y="130" class="cc">. </tspan><tspan class="key">IDE</tspan>:<tspan class="cc"> .................. </tspan><tspan class="value">Claude Code, Cursor, VSCode</tspan>
 <tspan x="390" y="150" class="cc">. </tspan>
 <tspan x="390" y="170" class="cc">. </tspan><tspan class="key">Languages</tspan>.<tspan class="key">Programming</tspan>:<tspan class="cc"> . </tspan><tspan class="value">Python, TypeScript, Svelte, React</tspan>
@@ -59,18 +59,19 @@ text, tspan {white-space: pre;}
 <tspan x="390" y="270" class="cc">. </tspan><tspan class="key">Hobbies</tspan>.<tspan class="key">Hardware</tspan>:<tspan class="cc"> ........... </tspan><tspan class="value">Raspberry Pi Projects</tspan>
 <tspan x="390" y="290" class="cc">. </tspan><tspan class="key">Hobbies</tspan>.<tspan class="key">Others</tspan>:<tspan class="cc"> ........... </tspan><tspan class="value">DIY &amp; Home Projects, Cottage Life</tspan>
 <tspan x="390" y="310" class="cc">. </tspan>
-<tspan x="390" y="330" class="cc">. </tspan><tspan class="key">Mission</tspan>:<tspan class="cc"> </tspan><tspan class="value">Building strategic AI solutions for</tspan>
-<tspan x="390" y="350" class="cc">. </tspan><tspan class="value">today's category leaders aiming to stay</tspan>
-<tspan x="390" y="370" class="cc">. </tspan><tspan class="value">ahead also tomorrow</tspan><tspan class="cc"> | </tspan><tspan class="key">50x productivity expert</tspan>
-<tspan x="390" y="400">- Contact</tspan> -——————————————————————————————————————————————-—-
-<tspan x="390" y="430" class="cc">. </tspan><tspan class="key">Email</tspan>:<tspan class="cc"> ..................... </tspan><tspan class="value">antti@andyparfei.dev</tspan>
-<tspan x="390" y="450" class="cc">. </tspan><tspan class="key">LinkedIn</tspan>:<tspan class="cc"> .... </tspan><tspan class="value">linkedin.com/in/antti-parviainen</tspan>
-<tspan x="390" y="490">- GitHub Today</tspan> -—————————————————————————————————————————-—-
-<tspan x="390" y="510" class="cc">. </tspan><tspan class="key">Commits</tspan>:<tspan class="cc" id="today_commits_dots"> ................. </tspan><tspan class="value" id="today_commits">0</tspan><tspan class="cc">  |  </tspan><tspan class="key">PRs</tspan>:<tspan class="cc" id="today_prs_dots"> ......... </tspan><tspan class="value" id="today_prs">0</tspan>
-<tspan x="390" y="530" class="cc">. </tspan><tspan class="key">Issues</tspan>:<tspan class="cc"> </tspan><tspan class="value" id="today_issues">0</tspan><tspan class="cc" id="today_issues_dots"></tspan><tspan class="key">Reviews</tspan>:<tspan class="cc"> </tspan><tspan class="value" id="today_reviews">0</tspan><tspan class="cc" id="today_reviews_dots"></tspan>
-<tspan x="390" y="570">- GitHub All Time</tspan> -——————————————————————————————————————-—-
-<tspan x="390" y="590" class="cc">. </tspan><tspan class="key">Repos</tspan>:<tspan class="cc" id="repo_data_dots"> ..... </tspan><tspan class="value" id="repo_data">9</tspan> {<tspan class="key">Contributed</tspan>: <tspan class="value" id="contrib_data">9</tspan>}<tspan class="cc" id="repo_stats_gap">  |  </tspan><tspan class="key">Stars</tspan>:<tspan class="cc" id="star_data_dots"> ............. </tspan><tspan class="value" id="star_data">0</tspan>
-<tspan x="390" y="610" class="cc">. </tspan><tspan class="key">Commits</tspan>:<tspan class="cc" id="commit_data_dots"> ..................... </tspan><tspan class="value" id="commit_data">3</tspan><tspan class="cc" id="commit_stats_gap"> |  </tspan><tspan class="key">Followers</tspan>:<tspan class="cc" id="follower_data_dots"> ......... </tspan><tspan class="value" id="follower_data">0</tspan>
-<tspan x="390" y="630" class="cc">. </tspan><tspan class="key">GitHub LOC</tspan>:<tspan class="cc" id="loc_data_dots"> .................... </tspan><tspan class="value" id="loc_data">3,830</tspan> ( <tspan class="addColor">+</tspan><tspan class="addColor" id="loc_add">4.3K</tspan>, <tspan id="loc_del_dots">. </tspan><tspan class="delColor">-</tspan><tspan class="delColor" id="loc_del">516</tspan> )
+<tspan x="390" y="330" class="cc">. </tspan><tspan class="key">Mission</tspan>.<tspan class="key">Rule1</tspan>:<tspan class="cc"> .. </tspan><tspan class="value">Build strategic AI solutions</tspan>
+<tspan x="390" y="350" class="cc">. </tspan><tspan class="key">Mission</tspan>.<tspan class="key">Rule2</tspan>:<tspan class="cc"> .. </tspan><tspan class="value">Help today's category leaders</tspan>
+<tspan x="390" y="370" class="cc">. </tspan><tspan class="value">                   stay ahead also tomorrow</tspan>
+<tspan x="390" y="390" class="cc">. </tspan><tspan class="key">Mission</tspan>.<tspan class="key">Rule3</tspan>:<tspan class="cc"> .. </tspan><tspan class="value">Boost personal productivity by 50x</tspan>
+<tspan x="390" y="410" class="cc">. </tspan><tspan class="key">Slogan</tspan>:<tspan class="cc"> .......................... </tspan><tspan class="value">"I still got it"</tspan>
+<tspan x="390" y="440">- Contact</tspan> -——————————————————————————————————————————————-—-
+<tspan x="390" y="470" class="cc">. </tspan><tspan class="key">Email</tspan>:<tspan class="cc"> ..................... </tspan><tspan class="value">antti@andyparfei.dev</tspan>
+<tspan x="390" y="490" class="cc">. </tspan><tspan class="key">LinkedIn</tspan>:<tspan class="cc"> .... </tspan><tspan class="value">linkedin.com/in/antti-parviainen</tspan>
+<tspan x="390" y="530">- GitHub Today</tspan> -—————————————————————————————————————————-—-
+<tspan x="390" y="550" class="cc">. </tspan><tspan class="key">Commits</tspan>:<tspan class="cc" id="today_commits_dots"> ................ </tspan><tspan class="value" id="today_commits">0</tspan><tspan class="cc">  |  </tspan><tspan class="key">PRs</tspan>:<tspan class="cc" id="today_prs_dots"> .............. </tspan><tspan class="value" id="today_prs">0</tspan>
+<tspan x="390" y="570" class="cc">. </tspan><tspan class="key">Issues</tspan>:<tspan class="cc" id="today_issues_dots"> ................. </tspan><tspan class="value" id="today_issues">0</tspan><tspan class="cc">  |  </tspan><tspan class="key">Reviews</tspan>:<tspan class="cc" id="today_reviews_dots"> ......... </tspan><tspan class="value" id="today_reviews">0</tspan>
+<tspan x="390" y="610">- GitHub All Time</tspan> -——————————————————————————————————————-—-
+<tspan x="390" y="630" class="cc">. </tspan><tspan class="key">Commits</tspan>:<tspan class="cc" id="commit_data_dots"> ................ </tspan><tspan class="value" id="commit_data">3</tspan><tspan class="cc">  |  </tspan><tspan class="key">PRs</tspan>:<tspan class="cc" id="alltime_prs_dots"> .............. </tspan><tspan class="value" id="alltime_prs">0</tspan>
+<tspan x="390" y="650" class="cc">. </tspan><tspan class="key">Issues</tspan>:<tspan class="cc" id="alltime_issues_dots"> ................. </tspan><tspan class="value" id="alltime_issues">0</tspan><tspan class="cc">  |  </tspan><tspan class="key">Reviews</tspan>:<tspan class="cc" id="alltime_reviews_dots"> ......... </tspan><tspan class="value" id="alltime_reviews">0</tspan>
 </text>
 </svg>

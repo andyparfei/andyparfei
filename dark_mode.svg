@@ -17,31 +17,31 @@ text, tspan {white-space: pre;}
 </style>
 <rect width="985px" height="490px" fill="#161b22" rx="15"/>
 <text x="15" y="30" fill="#c9d1d9" class="ascii">
-<tspan x="15" y="30">+++*+++***###*****######***++++==----::</tspan>
-<tspan x="15" y="50">+++++*****++*+*++++*********+++====----</tspan>
-<tspan x="15" y="70">+++++**++*####*****+++===========------</tspan>
-<tspan x="15" y="90">+===+*############*****+++===----::::::</tspan>
-<tspan x="15" y="110">==-=###############**#**+===-::::......</tspan>
-<tspan x="15" y="130">=-=#####%%%%%#####%%%##*#+=+=---:::....</tspan>
-<tspan x="15" y="150">==*#%%%%%#+---:---=+*%%%%#*++=--:::...:</tspan>
-<tspan x="15" y="170">+*%%%%%+-.    .  .:-+*%%%%%*==---:::..</tspan>
-<tspan x="15" y="190">#%%%%#=::::::...:-===+#%%%%%%=---:::..</tspan>
-<tspan x="15" y="210">%%%%%===-===:: -*+==+***%%%%%%=--::::::</tspan>
-<tspan x="15" y="230">%%%%*::.  ..:.  -:...:-*%%%%%%+:--:::--</tspan>
-<tspan x="15" y="250">%%%%+:.    ...  .:. .:-+%%%%%%#===--===</tspan>
-<tspan x="15" y="270">%%%%*-:.  ..---+*-...:=*%%%%%%*--::----</tspan>
-<tspan x="15" y="290">%%%%%-:..:::::::------=*%%%%%%*++====--</tspan>
-<tspan x="15" y="310">%%%%%*-:.:::-----=-::-=%%%%%%+=---=---=</tspan>
-<tspan x="15" y="330">#%%%%%#-::....:::.::=+%%%%%%#++==+++===</tspan>
-<tspan x="15" y="350">*%%%%%%*+=-:.....:-+#%%%%%%%*********+*</tspan>
-<tspan x="15" y="370">%%%%%%%%+==++***#%%#**#%%%%%###########</tspan>
-<tspan x="15" y="390">**%%%%%%#=-----=++++++#%%%%%###########</tspan>
-<tspan x="15" y="410">%%%%%%%%%#+--::--==-=#%%%%%%%%#########</tspan>
-<tspan x="15" y="430">%%%%%%%%%%%#*=-:::-+#%%%%%%%%%%########</tspan>
-<tspan x="15" y="450">%%%%%%%%%%%%%%#***%%%%%%%%%%###########</tspan>
-<tspan x="15" y="470">%%%%%%%%%%%%%%%%%%%%%%%%%%%%###########</tspan>
-<tspan x="15" y="490">%%%%%%%%%%%%%%%%%%%%%%%%%%%%#########%%</tspan>
-<tspan x="15" y="510">%%%%%%%%%%%%%%%%%%%%%%%%%%%#######%##%%</tspan>
+<tspan x="15" y="30">                                       </tspan>
+<tspan x="15" y="50">                                       </tspan>
+<tspan x="15" y="70">                                       </tspan>
+<tspan x="15" y="90">                                       </tspan>
+<tspan x="15" y="110">                        _              </tspan>
+<tspan x="15" y="130">                       | |             </tspan>
+<tspan x="15" y="150">         __ _ _ __   __| |_   _        </tspan>
+<tspan x="15" y="170">        / _` | '_ \ / _` | | | |       </tspan>
+<tspan x="15" y="190">       | (_| | | | | (_| | |_| |       </tspan>
+<tspan x="15" y="210">        \__,_|_| |_|\__,_|\__, |       </tspan>
+<tspan x="15" y="230">                           __/ |       </tspan>
+<tspan x="15" y="250">                          |___/        </tspan>
+<tspan x="15" y="270">                                       </tspan>
+<tspan x="15" y="290">                         __     _      </tspan>
+<tspan x="15" y="310">                        / _|   (_)     </tspan>
+<tspan x="15" y="330">       _ __   __ _ _ __| |_ ___ _      </tspan>
+<tspan x="15" y="350">      | '_ \ / _` | '__|  _/ _ \ |     </tspan>
+<tspan x="15" y="370">      | |_) | (_| | |  | ||  __/ |     </tspan>
+<tspan x="15" y="390">      | .__/ \__,_|_|  |_| \___|_|     </tspan>
+<tspan x="15" y="410">      | |                              </tspan>
+<tspan x="15" y="430">      |_|                              </tspan>
+<tspan x="15" y="450">                                       </tspan>
+<tspan x="15" y="470">                                       </tspan>
+<tspan x="15" y="490">                                       </tspan>
+<tspan x="15" y="510">                                       </tspan>
 </text>
 <text x="390" y="30" fill="#c9d1d9">
 <tspan x="390" y="30">antti_parviainen</tspan> -——————————————————————————————————————-—-
@@ -51,8 +51,8 @@ text, tspan {white-space: pre;}
 <tspan x="390" y="110" class="cc">. </tspan><tspan class="key">Kernel</tspan>:<tspan class="cc"> ........ </tspan><tspan class="value">Student (Paul Cornu High School) Operator</tspan>
 <tspan x="390" y="130" class="cc">. </tspan><tspan class="key">IDE</tspan>:<tspan class="cc"> ........................ </tspan><tspan class="value">VIM 8.2.2121, VSCode 1.114.0</tspan>
 <tspan x="390" y="150" class="cc">. </tspan>
-<tspan x="390" y="170" class="cc">. </tspan><tspan class="key">Languages</tspan>.<tspan class="key">Programming</tspan>:<tspan class="cc"> ......... </tspan><tspan class="value">Rust, Python, NextJS, C++</tspan>
-<tspan x="390" y="190" class="cc">. </tspan><tspan class="key">Languages</tspan>.<tspan class="key">Computer</tspan>:<tspan class="cc"> ............... </tspan><tspan class="value">HTML, CSS, JSON, LaTeX</tspan>
+<tspan x="390" y="170" class="cc">. </tspan><tspan class="key">Languages</tspan>.<tspan class="key">Programming</tspan>:<tspan class="cc"> . </tspan><tspan class="value">Python, TypeScript, Svelte, React</tspan>
+<tspan x="390" y="190" class="cc">. </tspan><tspan class="key">Languages</tspan>.<tspan class="key">Computer</tspan>:<tspan class="cc"> . </tspan><tspan class="value">Celonis, Qlik, PowerBI, N8N, Alteryx</tspan>
 <tspan x="390" y="210" class="cc">. </tspan><tspan class="key">Languages</tspan>.<tspan class="key">Real</tspan>:<tspan class="cc"> ........ </tspan><tspan class="value">Finnish, English, Swedish, German</tspan>
 <tspan x="390" y="230" class="cc">. </tspan>
 <tspan x="390" y="250" class="cc">. </tspan><tspan class="key">Hobbies</tspan>.<tspan class="key">Software</tspan>:<tspan class="cc"> ........ </tspan><tspan class="value">Agentic Workflow Automation</tspan>

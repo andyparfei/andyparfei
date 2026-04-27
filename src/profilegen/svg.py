@@ -79,18 +79,17 @@ def svg_overwrite(
     if today_data is not None:
         justify_format(root, "today_commits", today_data["commits"], config.TODAY_COMMITS_WIDTH)
         justify_format(root, "today_prs", today_data["prs"], config.TODAY_PRS_WIDTH)
-        justify_format(root, "today_issues", today_data["issues"])
-        justify_format(root, "today_reviews", today_data["reviews"])
+        justify_format(root, "today_issues", today_data["issues"], config.TODAY_ISSUES_WIDTH)
+        justify_format(root, "today_reviews", today_data["reviews"], config.TODAY_REVIEWS_WIDTH)
 
     if alltime_data is not None:
         justify_format(root, "commit_data", alltime_data["commits"], config.TODAY_COMMITS_WIDTH)
         justify_format(root, "alltime_prs", alltime_data["prs"], config.TODAY_PRS_WIDTH)
-        justify_format(root, "alltime_issues", alltime_data["issues"])
-        justify_format(root, "alltime_reviews", alltime_data["reviews"])
+        justify_format(root, "alltime_issues", alltime_data["issues"], config.TODAY_ISSUES_WIDTH)
+        justify_format(root, "alltime_reviews", alltime_data["reviews"], config.TODAY_REVIEWS_WIDTH)
 
-    # Write current UTC timestamp into the SVG.
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
-    find_and_replace(root, "last_updated", f"Last updated: {now}")
+    find_and_replace(root, "last_updated", now)
 
     tree.write(filename, encoding="utf-8", xml_declaration=True)
 

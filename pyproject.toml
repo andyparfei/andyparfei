@@ -9,6 +9,8 @@ dependencies = [
     "lxml",
     "python-dotenv",
     "numpy>=2.2.6",
+    "cairosvg>=2.9.0",
+    "pillow>=12.2.0",
 ]
 
 [tool.ruff]

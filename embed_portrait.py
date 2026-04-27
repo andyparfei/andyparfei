@@ -1,13 +1,13 @@
-"""Optimize asciify.svg and embed it into profile SVG templates."""
+"""Optimize asciify.svg, embed in profile SVGs, render full-card animated APNGs."""
 
+import math
 import re
-import struct
-import zlib
 from collections import defaultdict
 from pathlib import Path
 
+import cairosvg
 import numpy as np
-from lxml.etree import _Element, _ElementTree, parse, SubElement, tostring
+from PIL import Image
 
 # --- Configuration ---
 SOURCE_SVG = Path("asciify.svg")
@@ -21,7 +21,7 @@ PORTRAIT_Y = 25
 PORTRAIT_MAX_W = 365
 PORTRAIT_MAX_H = 420
 
-# Subsampling: target columns (rows derived from aspect ratio)
+# Subsampling
 TARGET_COLS = 80
 
 # Color quantization
@@ -30,16 +30,21 @@ NUM_COLORS = 256
 # Animation
 WAVE_DURATION = 6  # seconds for full wave cycle
 WAVE_ROWS = 8  # how many row-groups for staggered animation
-APNG_FRAMES = 30
-APNG_FRAME_DELAY_MS = 100
+APNG_FRAMES = 12
+APNG_FRAME_DELAY_MS = 250
+APNG_WIDTH = 800
+
+# Original asciify.svg cell spacing (pixels per character)
+ORIG_X_STEP = 6
+ORIG_Y_STEP = 12
+
+# Font metrics for ConsolasFallback (Consolas with size-adjust: 109%)
+CHAR_W_RATIO = 0.6 * 1.09  # ~0.654
+LINE_H_RATIO = 1.2
 
 
 def parse_asciify_svg(path: Path) -> tuple[list[list[tuple[int, int, str, str]]], int, int]:
-    """Parse asciify.svg into a grid of (x, y, color, char) tuples.
-
-    Returns:
-        (elements_by_row, n_cols, n_rows)
-    """
+    """Parse asciify.svg into a grid of (x, y, color, char) tuples."""
     with open(path) as f:
         content = f.read()
 
@@ -56,8 +61,7 @@ def parse_asciify_svg(path: Path) -> tuple[list[list[tuple[int, int, str, str]]]
         row.sort(key=lambda e: e[0])
 
     xs = sorted({e[0] for row in sorted_rows for e in row})
-    ys = sorted(rows.keys())
-    return sorted_rows, len(xs), len(ys)
+    return sorted_rows, len(xs), len(sorted_rows)
 
 
 def parse_rgb(color_str: str) -> tuple[int, int, int]:
@@ -73,25 +77,37 @@ def parse_rgb(color_str: str) -> tuple[int, int, int]:
 
 
 def subsample_grid(
-    rows: list[list[tuple[int, int, str, str]]], orig_cols: int, orig_rows: int, target_cols: int
+    rows: list[list[tuple[int, int, str, str]]],
+    orig_cols: int,
+    orig_rows: int,
+    target_cols: int,
 ) -> list[list[tuple[tuple[int, int, int], str]]]:
-    """Subsample the grid to target_cols, preserving aspect ratio.
+    """Subsample the grid, preserving the original image aspect ratio.
 
-    Returns list of rows, each row is list of (rgb, char).
+    The original cells are ORIG_X_STEP x ORIG_Y_STEP pixels, and the rendered
+    cells are CHAR_W_RATIO x LINE_H_RATIO em-units. We compute target_rows so
+    the rendered image matches the original aspect ratio.
     """
-    col_step = max(1, orig_cols // target_cols)
-    row_step = col_step  # keep square pixels
-    target_rows = orig_rows // row_step
+    # Original image dimensions in pixels
+    img_w = orig_cols * ORIG_X_STEP
+    img_h = orig_rows * ORIG_Y_STEP
+
+    # Compute target_rows to preserve aspect ratio:
+    # (target_cols * CHAR_W_RATIO) / (target_rows * LINE_H_RATIO) = img_w / img_h
+    target_rows = round(target_cols * CHAR_W_RATIO * img_h / (LINE_H_RATIO * img_w))
+    target_rows = max(1, min(target_rows, orig_rows))
 
     result = []
-    for ri in range(0, orig_rows, row_step):
-        if ri >= len(rows):
+    for ri in range(target_rows):
+        src_ri = round(ri * (orig_rows - 1) / (target_rows - 1)) if target_rows > 1 else 0
+        if src_ri >= len(rows):
             break
-        row = rows[ri]
+        row = rows[src_ri]
         sampled_row = []
-        for ci in range(0, orig_cols, col_step):
-            if ci < len(row):
-                _, _, color, char = row[ci]
+        for ci in range(target_cols):
+            src_ci = round(ci * (orig_cols - 1) / (target_cols - 1)) if target_cols > 1 else 0
+            if src_ci < len(row):
+                _, _, color, char = row[src_ci]
                 sampled_row.append((parse_rgb(color), char))
             else:
                 sampled_row.append(((0, 0, 0), " "))
@@ -111,7 +127,6 @@ def trim_background(
             if sum(rgb) > bg_threshold:
                 last_visible = i
         trimmed.append(row[: last_visible + 1] if last_visible >= 0 else [])
-    # Also trim trailing empty rows
     while trimmed and not trimmed[-1]:
         trimmed.pop()
     return trimmed
@@ -120,22 +135,17 @@ def trim_background(
 def quantize_colors(
     grid: list[list[tuple[tuple[int, int, int], str]]], n_colors: int
 ) -> tuple[list[list[tuple[int, str]]], list[tuple[int, int, int]]]:
-    """Quantize colors using fine uniform binning.
-
-    Returns (grid_with_indices, palette).
-    """
+    """Quantize colors using fine uniform binning."""
     all_colors = []
     for row in grid:
         for rgb, _ in row:
             all_colors.append(rgb)
     arr = np.array(all_colors, dtype=np.float32)
 
-    # Use 16 levels per channel for much better color fidelity
     levels = 16
     quantized = np.round(arr / 255 * (levels - 1)) * (255 / (levels - 1))
     quantized = np.clip(quantized, 0, 255).astype(np.uint8)
 
-    # Build palette from unique quantized colors
     unique_map: dict[tuple[int, int, int], int] = {}
     palette: list[tuple[int, int, int]] = []
     indices = []
@@ -146,7 +156,6 @@ def quantize_colors(
             palette.append(key)
         indices.append(unique_map[key])
 
-    # Rebuild grid with palette indices
     idx = 0
     result = []
     for row in grid:
@@ -168,30 +177,21 @@ def generate_portrait_svg_snippet(
     max_h: int,
     wave_duration: float,
     wave_rows: int,
-) -> str:
-    """Generate SVG markup for the optimized portrait with wave animation.
-
-    Returns SVG string to embed.
-    """
+) -> tuple[str, str]:
+    """Generate SVG markup for the optimized portrait with wave animation."""
     n_rows = len(grid)
     n_cols = max(len(r) for r in grid) if grid else 0
 
-    # Monospace fonts: Consolas character cell is ~0.6em wide, ~1.2em tall
-    # ConsolasFallback uses size-adjust: 109%, so effective width = 0.6 * 1.09
-    char_w_ratio = 0.6 * 1.09  # ~0.654
-    font_by_w = max_w / (n_cols * char_w_ratio)
-    font_by_h = max_h / (n_rows * 1.2)
+    font_by_w = max_w / (n_cols * CHAR_W_RATIO)
+    font_by_h = max_h / (n_rows * LINE_H_RATIO)
     font_size = min(font_by_w, font_by_h)
-    line_height = font_size * 1.2
+    line_height = font_size * LINE_H_RATIO
 
     lines = []
-
-    # CSS classes for palette colors
     lines.append("/* Portrait palette */")
     for i, (r, g, b) in enumerate(palette):
         lines.append(f".p{i} {{fill:#{r:02x}{g:02x}{b:02x};}}")
 
-    # Wave animation
     lines.append(f"""
 @keyframes wave {{
   0%, 100% {{ opacity: 1; }}
@@ -206,13 +206,11 @@ def generate_portrait_svg_snippet(
 
     css = "\n".join(lines)
 
-    # Build text elements row by row
     text_lines = []
     for ri, row in enumerate(grid):
         y = y_offset + ri * line_height + line_height
         wave_class = f"w{ri % wave_rows}"
 
-        # Group consecutive same-palette chars
         groups: list[tuple[int, str]] = []
         for palette_idx, char in row:
             if groups and groups[-1][0] == palette_idx:
@@ -241,7 +239,6 @@ def embed_in_profile_svg(
     with open(svg_path) as f:
         content = f.read()
 
-    # Remove the old ASCII banner text block (the <text> with class="ascii")
     content = re.sub(
         r'<text x="15" y="25"[^>]*class="ascii"[^>]*>.*?</text>\s*',
         "",
@@ -249,13 +246,11 @@ def embed_in_profile_svg(
         flags=re.DOTALL,
     )
 
-    # Inject portrait CSS into existing <style> block
     content = content.replace(
         "text, tspan {white-space: pre;}",
         f"text, tspan {{white-space: pre;}}\n{portrait_css}",
     )
 
-    # Inject portrait markup before the profile text block
     content = content.replace(
         '<text x="390"',
         f'{portrait_markup}\n<text x="390"',
@@ -266,136 +261,62 @@ def embed_in_profile_svg(
         f.write(content)
 
 
-def make_apng(
-    grid: list[list[tuple[int, str]]],
-    palette: list[tuple[int, int, int]],
-    bg_color: tuple[int, int, int],
+def render_svg_to_apng(
+    svg_path: str,
     output_path: Path,
     n_frames: int,
     frame_delay_ms: int,
     wave_duration: float,
     wave_rows: int,
 ) -> None:
-    """Render animated APNG of the portrait with wave effect."""
-    n_grid_rows = len(grid)
-    n_cols = max(len(r) for r in grid) if grid else 0
+    """Render the full profile SVG to animated APNG by baking wave animation into frames."""
+    with open(svg_path) as f:
+        svg_content = f.read()
 
-    # Scale: each cell = 4x4 pixels for a reasonable APNG size
-    scale = 4
-    img_w = n_cols * scale
-    img_h = n_grid_rows * scale
+    width = APNG_WIDTH
+    height = round(APNG_WIDTH * 920 / 1024)
 
-    br, bg_, bb = bg_color
-    frames_data = []
+    frames: list[Image.Image] = []
 
     for frame_i in range(n_frames):
-        t = frame_i / n_frames  # 0..1 through the wave cycle
+        t = frame_i / n_frames * wave_duration
 
-        # Build raw RGBA pixel data, pre-fill with background
-        pixels = bytearray(img_w * img_h * 4)
-        for i in range(img_w * img_h):
-            pixels[i * 4] = br
-            pixels[i * 4 + 1] = bg_
-            pixels[i * 4 + 2] = bb
-            pixels[i * 4 + 3] = 255
+        # Replace CSS animation classes with static opacity values for this frame
+        frame_svg = svg_content
+        for i in range(wave_rows):
+            delay = (wave_duration / wave_rows) * i
+            elapsed = t - delay
+            phase = (elapsed % wave_duration) / wave_duration
+            opacity = 0.6 + 0.4 * (0.5 + 0.5 * math.sin(2 * math.pi * phase))
 
-        for ri, row in enumerate(grid):
-            wave_group = ri % wave_rows
-            phase = (t - wave_group / wave_rows) % 1.0
-            # Sine wave opacity: 0.6 to 1.0
-            opacity = 0.6 + 0.4 * (0.5 + 0.5 * np.sin(2 * np.pi * phase))
+            # Replace the animation rule with a static opacity
+            old_rule = (
+                f".w{i} {{animation: wave {wave_duration}s "
+                f"ease-in-out {delay:.2f}s infinite;}}"
+            )
+            new_rule = f".w{i} {{opacity: {opacity:.3f};}}"
+            frame_svg = frame_svg.replace(old_rule, new_rule)
 
-            for ci, (palette_idx, _) in enumerate(row):
-                r, g, b = palette[palette_idx]
-                fr = int(r * opacity + br * (1 - opacity))
-                fg = int(g * opacity + bg_ * (1 - opacity))
-                fb = int(b * opacity + bb * (1 - opacity))
-
-                for dy in range(scale):
-                    for dx in range(scale):
-                        px = ci * scale + dx
-                        py = ri * scale + dy
-                        if px < img_w and py < img_h:
-                            offset = (py * img_w + px) * 4
-                            pixels[offset] = fr
-                            pixels[offset + 1] = fg
-                            pixels[offset + 2] = fb
-
-        frames_data.append((img_w, img_h, bytes(pixels)))
-
-    _write_apng(frames_data, output_path, frame_delay_ms)
-
-
-def _write_apng(
-    frames: list[tuple[int, int, bytes]],
-    output: Path,
-    delay_ms: int,
-) -> None:
-    """Write frames as APNG file."""
-    if not frames:
-        return
-
-    w, h, _ = frames[0]
-    n_frames = len(frames)
-
-    def make_chunk(chunk_type: bytes, data: bytes) -> bytes:
-        chunk = chunk_type + data
-        crc = struct.pack(">I", zlib.crc32(chunk) & 0xFFFFFFFF)
-        return struct.pack(">I", len(data)) + chunk + crc
-
-    def compress_image_data(raw_rgba: bytes, width: int, height: int) -> bytes:
-        """Apply PNG filtering (none filter) and deflate."""
-        filtered = bytearray()
-        row_len = width * 4
-        for y in range(height):
-            filtered.append(0)  # filter type: None
-            filtered.extend(raw_rgba[y * row_len : (y + 1) * row_len])
-        return zlib.compress(bytes(filtered), 9)
-
-    out = bytearray()
-
-    # PNG signature
-    out.extend(b"\x89PNG\r\n\x1a\n")
-
-    # IHDR
-    ihdr_data = struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)  # 8-bit RGBA
-    out.extend(make_chunk(b"IHDR", ihdr_data))
-
-    # acTL (animation control)
-    actl_data = struct.pack(">II", n_frames, 0)  # num_frames, num_plays (0=infinite)
-    out.extend(make_chunk(b"acTL", actl_data))
-
-    seq_num = 0
-
-    # First frame: fcTL + IDAT
-    fctl_data = struct.pack(
-        ">IIIIIHHBB",
-        seq_num, w, h, 0, 0, delay_ms, 1000, 0, 0,
-    )
-    out.extend(make_chunk(b"fcTL", fctl_data))
-    seq_num += 1
-
-    compressed = compress_image_data(frames[0][2], w, h)
-    out.extend(make_chunk(b"IDAT", compressed))
-
-    # Subsequent frames: fcTL + fdAT
-    for i in range(1, n_frames):
-        fctl_data = struct.pack(
-            ">IIIIIHHBB",
-            seq_num, w, h, 0, 0, delay_ms, 1000, 0, 0,
+        # Render SVG to PNG bytes
+        png_bytes = cairosvg.svg2png(
+            bytestring=frame_svg.encode("utf-8"),
+            output_width=width,
+            output_height=height,
         )
-        out.extend(make_chunk(b"fcTL", fctl_data))
-        seq_num += 1
 
-        compressed = compress_image_data(frames[i][2], w, h)
-        fdat_data = struct.pack(">I", seq_num) + compressed
-        out.extend(make_chunk(b"fdAT", fdat_data))
-        seq_num += 1
+        frame_img = Image.open(__import__("io").BytesIO(png_bytes)).convert("RGB")
+        # Convert to palette mode for much smaller file size
+        frame_img = frame_img.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+        frames.append(frame_img)
 
-    # IEND
-    out.extend(make_chunk(b"IEND", b""))
-
-    output.write_bytes(bytes(out))
+    # Save as APNG using Pillow
+    frames[0].save(
+        output_path,
+        save_all=True,
+        append_images=frames[1:],
+        duration=frame_delay_ms,
+        loop=0,
+    )
 
 
 def main() -> None:
@@ -403,7 +324,7 @@ def main() -> None:
     rows, n_cols, n_rows = parse_asciify_svg(SOURCE_SVG)
     print(f"  Grid: {n_cols}x{n_rows} = {n_cols * n_rows} cells")
 
-    print(f"Subsampling to ~{TARGET_COLS} columns...")
+    print(f"Subsampling to ~{TARGET_COLS} columns (aspect-corrected)...")
     grid = subsample_grid(rows, n_cols, n_rows, TARGET_COLS)
     actual_cols = max(len(r) for r in grid)
     print(f"  Result: {actual_cols}x{len(grid)}")
@@ -413,7 +334,7 @@ def main() -> None:
     actual_cols = max(len(r) for r in grid) if grid else 0
     print(f"  After trim: {actual_cols}x{len(grid)}")
 
-    print(f"Quantizing to {NUM_COLORS} colors...")
+    print(f"Quantizing colors...")
     indexed_grid, palette = quantize_colors(grid, NUM_COLORS)
     print(f"  Palette: {len(palette)} colors")
 
@@ -433,21 +354,16 @@ def main() -> None:
     for svg_file in TARGET_SVGS:
         print(f"Embedding in {svg_file}...")
         embed_in_profile_svg(svg_file, portrait_css, portrait_markup)
-
-    # File size check
-    for svg_file in TARGET_SVGS:
         size = Path(svg_file).stat().st_size
         print(f"  {svg_file}: {size / 1024:.1f} KB")
 
-    print("Generating APNGs...")
-    for apng_path, bg, label in [
-        (APNG_DARK, (22, 27, 34), "dark"),    # #161b22
-        (APNG_LIGHT, (246, 248, 250), "light"),  # #f6f8fa
+    print("Rendering full-card APNGs...")
+    for svg_file, apng_path in [
+        ("dark_mode.svg", APNG_DARK),
+        ("light_mode.svg", APNG_LIGHT),
     ]:
-        make_apng(
-            indexed_grid,
-            palette,
-            bg,
+        render_svg_to_apng(
+            svg_file,
             apng_path,
             APNG_FRAMES,
             APNG_FRAME_DELAY_MS,
@@ -455,7 +371,7 @@ def main() -> None:
             WAVE_ROWS,
         )
         size = apng_path.stat().st_size
-        print(f"  {apng_path} ({label}): {size / 1024:.1f} KB")
+        print(f"  {apng_path}: {size / 1024:.1f} KB")
 
     print("Done!")
 

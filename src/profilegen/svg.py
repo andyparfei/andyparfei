@@ -177,9 +177,9 @@ def add_language_bar(
     if not lang_data:
         return
 
-    bar_x = 408
+    bar_x = 390
     bar_y = 790
-    bar_w = 582
+    bar_w = 600
     bar_h = 12
     bar_rx = 6
     label_y = 815

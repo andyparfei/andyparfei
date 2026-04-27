@@ -39,6 +39,8 @@ REPO_DATA_WIDTH = 6
 STAR_DATA_WIDTH = 14
 STATS_SECONDARY_COLUMN_WIDTH = 34
 STATS_SECONDARY_SEPARATOR = " |  "
+TODAY_COMMITS_WIDTH = 18
+TODAY_PRS_WIDTH = 10
 
 # Simple runtime counters so the script can report how many GraphQL calls each path used.
 QUERY_COUNT = {
@@ -47,6 +49,7 @@ QUERY_COUNT = {
     "graph_repos_stars": 0,
     "recursive_loc": 0,
     "loc_query": 0,
+    "daily_contributions": 0,
 }
 
 # Runtime state is populated after environment configuration and user lookup.
@@ -527,6 +530,7 @@ def svg_overwrite(
     contrib_data,
     follower_data,
     loc_data,
+    today_data=None,
 ):
     tree = parse(filename)
     root = tree.getroot()
@@ -551,6 +555,11 @@ def svg_overwrite(
         "commit_stats_gap",
         secondary_stat_gap(commit_stats_left_width(commit_data)),
     )
+    if today_data is not None:
+        justify_format(root, "today_commits", today_data["commits"], TODAY_COMMITS_WIDTH)
+        justify_format(root, "today_prs", today_data["prs"], TODAY_PRS_WIDTH)
+        justify_format(root, "today_issues", today_data["issues"])
+        justify_format(root, "today_reviews", today_data["reviews"])
     tree.write(filename, encoding="utf-8", xml_declaration=True)
 
 
@@ -656,6 +665,34 @@ def user_getter(username):
     return data["user"]["id"]
 
 
+# Fetch today's contribution stats from the contributionsCollection API.
+def daily_contributions(username):
+    query_count("daily_contributions")
+    today = datetime.datetime.utcnow().date()
+    from_date = f"{today}T00:00:00Z"
+    to_date = f"{today}T23:59:59Z"
+    query = """
+    query($login: String!, $from: DateTime!, $to: DateTime!) {
+        user(login: $login) {
+            contributionsCollection(from: $from, to: $to) {
+                totalCommitContributions
+                totalPullRequestContributions
+                totalIssueContributions
+                totalPullRequestReviewContributions
+            }
+        }
+    }"""
+    variables = {"login": username, "from": from_date, "to": to_date}
+    data = graphql_request("daily_contributions", query, variables)
+    collection = data["user"]["contributionsCollection"]
+    return {
+        "commits": collection["totalCommitContributions"],
+        "prs": collection["totalPullRequestContributions"],
+        "issues": collection["totalIssueContributions"],
+        "reviews": collection["totalPullRequestReviewContributions"],
+    }
+
+
 # Fetch the follower count shown on the SVG card.
 def follower_getter(username):
     query_count("follower_getter")
@@ -698,6 +735,7 @@ def update_svg_files(
     contrib_data,
     follower_data,
     loc_data,
+    today_data=None,
 ):
     for svg_file in SVG_FILES:
         svg_overwrite(
@@ -709,6 +747,7 @@ def update_svg_files(
             contrib_data,
             follower_data,
             loc_data,
+            today_data,
         )
 
 
@@ -759,6 +798,9 @@ def main():
     follower_data, follower_time = perf_counter(follower_getter, USER_NAME)
     print_duration("followers", follower_time)
 
+    today_data, today_time = perf_counter(daily_contributions, USER_NAME)
+    print_duration("daily stats", today_time)
+
     # Only this specific user has deleted-repository stats tracked in the archive file.
     if OWNER_ID == ARCHIVE_USER_ID:
         archived_data = add_archive()
@@ -778,6 +820,7 @@ def main():
         contrib_data,
         follower_data,
         total_loc[:-1],
+        today_data,
     )
 
     total_runtime = (
@@ -789,6 +832,7 @@ def main():
         + repo_time
         + contrib_time
         + follower_time
+        + today_time
     )
     print(f"{'Total function time:':<21} {total_runtime:>11.4f} s")
     print(f"Total GitHub GraphQL API calls: {sum(QUERY_COUNT.values()):>3}")

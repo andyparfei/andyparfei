@@ -29,7 +29,7 @@ TODAY_PRS_WIDTH = 14
 TODAY_ISSUES_WIDTH = 17
 TODAY_REVIEWS_WIDTH = 11
 
-QUERY_COUNT = {
+QUERY_COUNT: dict[str, int] = {
     "user_getter": 0,
     "follower_getter": 0,
     "graph_repos_stars": 0,
@@ -38,19 +38,31 @@ QUERY_COUNT = {
     "daily_contributions": 0,
 }
 
-HEADERS = {}
-USER_NAME = ""
-OWNER_ID = None
+HEADERS: dict[str, str] = {}
+USER_NAME: str = ""
+OWNER_ID: str | None = None
 
 
-def require_env(name):
+def require_env(name: str) -> str:
+    """Retrieve a required environment variable or raise an error.
+
+    Args:
+        name: The environment variable name.
+
+    Returns:
+        The value of the environment variable.
+
+    Raises:
+        RuntimeError: If the environment variable is not set.
+    """
     value = os.getenv(name)
     if value:
         return value
     raise RuntimeError(f"Missing required environment variable: {name}")
 
 
-def configure_environment():
+def configure_environment() -> None:
+    """Load .env and set global HEADERS and USER_NAME from environment variables."""
     global HEADERS, USER_NAME
     load_dotenv()
     access_token = require_env("ACCESS_TOKEN")
@@ -58,5 +70,10 @@ def configure_environment():
     HEADERS = {"authorization": f"token {access_token}"}
 
 
-def query_count(function_name):
+def query_count(function_name: str) -> None:
+    """Increment the API call counter for the given function.
+
+    Args:
+        function_name: Key in QUERY_COUNT to increment.
+    """
     QUERY_COUNT[function_name] += 1

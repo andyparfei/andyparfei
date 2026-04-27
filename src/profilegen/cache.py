@@ -2,20 +2,55 @@
 
 import hashlib
 import re
+from pathlib import Path
+from typing import Any
 
 from profilegen import config
 
 
-def cache_file_path():
+def cache_file_path() -> Path:
+    """Return the cache file path derived from the hashed username.
+
+    Returns:
+        Path to the user-specific cache file inside the cache directory.
+    """
     hashed_user = hashlib.sha256(config.USER_NAME.encode("utf-8")).hexdigest()
     return config.CACHE_DIR / f"{hashed_user}.txt"
 
 
-def comment_block_lines(comment_size):
+def comment_block_lines(comment_size: int) -> list[str]:
+    """Generate a list of comment placeholder lines.
+
+    Args:
+        comment_size: Number of comment lines to produce.
+
+    Returns:
+        A list of identical comment strings.
+    """
     return [config.CACHE_COMMENT_LINE for _ in range(comment_size)]
 
 
-def cache_builder(edges, comment_size, force_cache, loc_fetcher, loc_add=0, loc_del=0):
+def cache_builder(
+    edges: list[dict[str, Any]],
+    comment_size: int,
+    force_cache: bool,
+    loc_fetcher: Any,
+    loc_add: int = 0,
+    loc_del: int = 0,
+) -> list[Any]:
+    """Build or update the LOC cache file and return aggregated statistics.
+
+    Args:
+        edges: Repository edge nodes from the GitHub GraphQL API.
+        comment_size: Number of leading comment lines in the cache file.
+        force_cache: If ``True``, flush and rebuild the cache unconditionally.
+        loc_fetcher: Callable that fetches LOC data for a single repository.
+        loc_add: Running total of added lines (used for accumulation).
+        loc_del: Running total of deleted lines (used for accumulation).
+
+    Returns:
+        A list of ``[additions, deletions, net_loc, cached_flag]``.
+    """
     cached = True
     filename = cache_file_path()
 
@@ -37,7 +72,7 @@ def cache_builder(edges, comment_size, force_cache, loc_fetcher, loc_add=0, loc_
     cache_rows = data[comment_size:]
 
     for index, edge in enumerate(edges):
-        repository_name = edge["node"]["nameWithOwner"]
+        repository_name: str = edge["node"]["nameWithOwner"]
         expected_hash = hashlib.sha256(repository_name.encode("utf-8")).hexdigest()
         stored_hash, stored_commit_count, *_ = cache_rows[index].split()
 
@@ -48,7 +83,7 @@ def cache_builder(edges, comment_size, force_cache, loc_fetcher, loc_add=0, loc_
 
         branch = edge["node"].get("defaultBranchRef")
         history = None if branch is None else branch["target"]["history"]
-        current_commit_count = 0 if history is None else history["totalCount"]
+        current_commit_count: int = 0 if history is None else history["totalCount"]
 
         if int(stored_commit_count) != current_commit_count:
             cached = False
@@ -79,7 +114,14 @@ def cache_builder(edges, comment_size, force_cache, loc_fetcher, loc_add=0, loc_
     return [loc_add, loc_del, loc_add - loc_del, cached]
 
 
-def flush_cache(edges, filename, comment_size):
+def flush_cache(edges: list[dict[str, Any]], filename: Path, comment_size: int) -> None:
+    """Overwrite the cache file with zeroed entries for every repository.
+
+    Args:
+        edges: Repository edge nodes from the GitHub GraphQL API.
+        filename: Path to the cache file.
+        comment_size: Number of leading comment lines to preserve.
+    """
     try:
         with filename.open("r") as handle:
             cache_header = handle.readlines()[:comment_size]
@@ -92,12 +134,18 @@ def flush_cache(edges, filename, comment_size):
     with filename.open("w") as handle:
         handle.writelines(cache_header[:comment_size])
         for edge in edges:
-            repository_name = edge["node"]["nameWithOwner"]
+            repository_name: str = edge["node"]["nameWithOwner"]
             repository_hash = hashlib.sha256(repository_name.encode("utf-8")).hexdigest()
             handle.write(f"{repository_hash} 0 0 0 0\n")
 
 
-def force_close_file(cache_rows, cache_header):
+def force_close_file(cache_rows: list[str], cache_header: list[str]) -> None:
+    """Write partial cache data to disk as an emergency save.
+
+    Args:
+        cache_rows: The data rows of the cache.
+        cache_header: The comment header lines of the cache.
+    """
     filename = cache_file_path()
     with filename.open("w") as handle:
         handle.writelines(cache_header)
@@ -105,7 +153,15 @@ def force_close_file(cache_rows, cache_header):
     print(f"Saved partial cache data to {filename}.")
 
 
-def commit_counter(comment_size):
+def commit_counter(comment_size: int) -> int:
+    """Sum the commit counts stored in the cache file.
+
+    Args:
+        comment_size: Number of leading comment lines to skip.
+
+    Returns:
+        Total number of commits across all cached repositories.
+    """
     total_commits = 0
     filename = cache_file_path()
     with filename.open("r") as handle:
@@ -115,7 +171,13 @@ def commit_counter(comment_size):
     return total_commits
 
 
-def add_archive():
+def add_archive() -> list[int]:
+    """Load archived repository data and return aggregated statistics.
+
+    Returns:
+        A list of ``[added_loc, deleted_loc, net_loc, archived_commits,
+        contributed_repos]``, or all zeros if the archive file is missing.
+    """
     if not config.ARCHIVE_PATH.exists():
         return [0, 0, 0, 0, 0]
 

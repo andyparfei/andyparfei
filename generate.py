@@ -10,7 +10,6 @@ from profilegen import config
 from profilegen.cache import add_archive, commit_counter
 from profilegen.formatting import format_age, perf_counter, print_duration
 from profilegen.github_api import (
-    alltime_contributions,
     daily_contributions,
     follower_getter,
     graph_repos_stars,
@@ -20,7 +19,8 @@ from profilegen.github_api import (
 from profilegen.svg import update_svg_files
 
 
-def main():
+def main() -> None:
+    """Run the full profile statistics pipeline and update the SVG files."""
     config.configure_environment()
 
     print("Calculation times:")
@@ -61,9 +61,6 @@ def main():
     today_data, today_time = perf_counter(daily_contributions, config.USER_NAME)
     print_duration("daily stats", today_time)
 
-    alltime_data, alltime_time = perf_counter(alltime_contributions, config.USER_NAME)
-    print_duration("alltime stats", alltime_time)
-
     if config.OWNER_ID == config.ARCHIVE_USER_ID:
         archived_data = add_archive()
         for index in range(len(total_loc) - 1):
@@ -82,7 +79,6 @@ def main():
         follower_data,
         total_loc[:-1],
         today_data,
-        alltime_data,
     )
 
     total_runtime = (
@@ -95,7 +91,6 @@ def main():
         + contrib_time
         + follower_time
         + today_time
-        + alltime_time
     )
     print(f"{'Total function time:':<21} {total_runtime:>11.4f} s")
     print(f"Total GitHub GraphQL API calls: {sum(config.QUERY_COUNT.values()):>3}")

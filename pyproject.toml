@@ -10,12 +10,6 @@ dependencies = [
     "python-dotenv",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "ruff",
-    "basedpyright",
-]
-
 [tool.ruff]
 target-version = "py310"
 src = ["src"]
@@ -60,3 +54,9 @@ venvPath = "."
 venv = ".venv"
 reportMissingImports = true
 reportMissingTypeStubs = false
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.39.3",
+    "ruff>=0.15.12",
+]

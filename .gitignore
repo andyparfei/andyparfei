@@ -1,4 +1,6 @@
 .env
+.venv/
+.ruff_cache/
 
 # Python cache
 __pycache__/

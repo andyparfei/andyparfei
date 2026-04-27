@@ -1,6 +1,7 @@
 """GitHub GraphQL API queries."""
 
 import datetime
+from typing import Any
 
 import requests
 
@@ -8,7 +9,16 @@ from profilegen import config
 from profilegen.cache import cache_builder, force_close_file
 
 
-def _raise_request_error(operation_name, response):
+def _raise_request_error(operation_name: str, response: requests.Response) -> None:
+    """Raise a descriptive ``RuntimeError`` for a failed HTTP response.
+
+    Args:
+        operation_name: Label used in the error message.
+        response: The failed HTTP response.
+
+    Raises:
+        RuntimeError: Always raised with status and body details.
+    """
     if response.status_code == 403:
         raise RuntimeError("Too many requests in a short amount of time. GitHub returned 403.")
     raise RuntimeError(
@@ -17,7 +27,27 @@ def _raise_request_error(operation_name, response):
     )
 
 
-def graphql_request(operation_name, query, variables, partial_cache=None):
+def graphql_request(
+    operation_name: str,
+    query: str,
+    variables: dict[str, Any],
+    partial_cache: tuple[list[str], list[str]] | None = None,
+) -> dict[str, Any]:
+    """Execute a GitHub GraphQL request and return the ``data`` payload.
+
+    Args:
+        operation_name: Human-readable label for error messages.
+        query: The GraphQL query string.
+        variables: Variables passed alongside the query.
+        partial_cache: Optional ``(cache_rows, cache_header)`` tuple; if
+            provided the cache is flushed to disk on failure.
+
+    Returns:
+        The ``data`` key of the parsed JSON response.
+
+    Raises:
+        RuntimeError: On HTTP errors, invalid JSON, or GraphQL-level errors.
+    """
     try:
         response = requests.post(
             config.GITHUB_GRAPHQL_URL,
@@ -36,7 +66,7 @@ def graphql_request(operation_name, query, variables, partial_cache=None):
         _raise_request_error(operation_name, response)
 
     try:
-        payload = response.json()
+        payload: dict[str, Any] = response.json()
     except ValueError as error:
         if partial_cache is not None:
             force_close_file(*partial_cache)
@@ -50,7 +80,15 @@ def graphql_request(operation_name, query, variables, partial_cache=None):
     return payload["data"]
 
 
-def user_getter(username):
+def user_getter(username: str) -> str:
+    """Fetch the GitHub node ID for a user.
+
+    Args:
+        username: GitHub login name.
+
+    Returns:
+        The user's node ID string.
+    """
     config.query_count("user_getter")
     query = """
     query($login: String!){
@@ -60,7 +98,15 @@ def user_getter(username):
     return data["user"]["id"]
 
 
-def follower_getter(username):
+def follower_getter(username: str) -> int:
+    """Fetch the follower count for a user.
+
+    Args:
+        username: GitHub login name.
+
+    Returns:
+        Number of followers.
+    """
     config.query_count("follower_getter")
     query = """
     query($login: String!){
@@ -70,9 +116,17 @@ def follower_getter(username):
     return int(data["user"]["followers"]["totalCount"])
 
 
-def daily_contributions(username):
+def daily_contributions(username: str) -> dict[str, int]:
+    """Fetch today's contribution counts for a user.
+
+    Args:
+        username: GitHub login name.
+
+    Returns:
+        A dict with keys ``commits``, ``prs``, ``issues``, ``reviews``.
+    """
     config.query_count("daily_contributions")
-    today = datetime.datetime.utcnow().date()
+    today = datetime.datetime.now(tz=datetime.timezone.utc).date()
     from_date = f"{today}T00:00:00Z"
     to_date = f"{today}T23:59:59Z"
     query = """
@@ -98,7 +152,15 @@ def daily_contributions(username):
     }
 
 
-def alltime_contributions(username):
+def alltime_contributions(username: str) -> dict[str, int]:
+    """Fetch all-time contribution counts for a user.
+
+    Args:
+        username: GitHub login name.
+
+    Returns:
+        A dict with keys ``commits``, ``prs``, ``issues``, ``reviews``.
+    """
     config.query_count("daily_contributions")
     query = """
     query($login: String!) {
@@ -121,14 +183,33 @@ def alltime_contributions(username):
     }
 
 
-def _stars_counter(edges):
+def _stars_counter(edges: list[dict[str, Any]]) -> int:
+    """Sum the stargazer counts across a list of repository edges.
+
+    Args:
+        edges: Repository edge nodes from the GraphQL response.
+
+    Returns:
+        Total star count.
+    """
     return sum(e["node"]["stargazers"]["totalCount"] for e in edges)
 
 
-def graph_repos_stars(count_type, owner_affiliation):
+def graph_repos_stars(count_type: str, owner_affiliation: list[str]) -> int:
+    """Paginate through a user's repositories and return a total count.
+
+    Args:
+        count_type: ``"stars"`` to count stargazers, ``"repos"`` to count
+            repositories.
+        owner_affiliation: List of affiliation filters (e.g.
+            ``["OWNER", "COLLABORATOR"]``).
+
+    Returns:
+        The total star count or repository count depending on *count_type*.
+    """
     total_repositories = 0
     total_stars = 0
-    cursor = None
+    cursor: str | None = None
 
     query = """
     query ($owner_affiliation: [RepositoryAffiliation], $login: String!, $cursor: String) {
@@ -143,7 +224,7 @@ def graph_repos_stars(count_type, owner_affiliation):
 
     while True:
         config.query_count("graph_repos_stars")
-        variables = {
+        variables: dict[str, Any] = {
             "owner_affiliation": owner_affiliation,
             "login": config.USER_NAME,
             "cursor": cursor,
@@ -164,15 +245,30 @@ def graph_repos_stars(count_type, owner_affiliation):
 
 
 def recursive_loc(
-    owner,
-    repo_name,
-    cache_rows,
-    cache_header,
-    addition_total=0,
-    deletion_total=0,
-    my_commits=0,
-    cursor=None,
-):
+    owner: str,
+    repo_name: str,
+    cache_rows: list[str],
+    cache_header: list[str],
+    addition_total: int = 0,
+    deletion_total: int = 0,
+    my_commits: int = 0,
+    cursor: str | None = None,
+) -> tuple[int, int, int]:
+    """Recursively paginate commit history to count LOC contributed by the user.
+
+    Args:
+        owner: Repository owner login.
+        repo_name: Repository name.
+        cache_rows: Current cache data rows (for emergency save).
+        cache_header: Current cache header lines (for emergency save).
+        addition_total: Running additions accumulator.
+        deletion_total: Running deletions accumulator.
+        my_commits: Running commit count accumulator.
+        cursor: GraphQL pagination cursor.
+
+    Returns:
+        A tuple of ``(additions, deletions, my_commits)``.
+    """
     config.query_count("recursive_loc")
     query = """
     query ($repo_name: String!, $owner: String!, $cursor: String) {
@@ -197,7 +293,7 @@ def recursive_loc(
             }
         }
     }"""
-    variables = {"repo_name": repo_name, "owner": owner, "cursor": cursor}
+    variables: dict[str, Any] = {"repo_name": repo_name, "owner": owner, "cursor": cursor}
     data = graphql_request(
         "recursive_loc", query, variables, partial_cache=(cache_rows, cache_header)
     )
@@ -230,7 +326,21 @@ def recursive_loc(
     )
 
 
-def loc_query(owner_affiliation, comment_size=0, force_cache=False):
+def loc_query(
+    owner_affiliation: list[str],
+    comment_size: int = 0,
+    force_cache: bool = False,
+) -> list[Any]:
+    """Query all repositories for the authenticated user and build the LOC cache.
+
+    Args:
+        owner_affiliation: List of affiliation filters for the query.
+        comment_size: Number of comment lines at the top of the cache file.
+        force_cache: If ``True``, rebuild the cache from scratch.
+
+    Returns:
+        A list of ``[additions, deletions, net_loc, cached_flag]``.
+    """
     query = """
     query ($owner_affiliation: [RepositoryAffiliation], $login: String!, $cursor: String) {
         user(login: $login) {
@@ -248,11 +358,11 @@ def loc_query(owner_affiliation, comment_size=0, force_cache=False):
         }
     }"""
 
-    cursor = None
-    edges = []
+    cursor: str | None = None
+    edges: list[dict[str, Any]] = []
     while True:
         config.query_count("loc_query")
-        variables = {
+        variables: dict[str, Any] = {
             "owner_affiliation": owner_affiliation,
             "login": config.USER_NAME,
             "cursor": cursor,

@@ -1,4 +1,4 @@
-"""Copyright 2026 Vikbg.
+"""Copyright 2026 andyparfei.
 
 SPDX-License-Identifier: Apache-2.0
 Keep the attribution notice from the repository NOTICE file when redistributing.

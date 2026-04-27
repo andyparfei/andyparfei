@@ -17,17 +17,15 @@ ARCHIVE_USER_ID = "U_kgDOC15JXw"
 CACHE_COMMENT_LINE = "This line is a comment block. Write whatever you want here.\n"
 
 AGE_DATA_WIDTH = 49
-COMMIT_DATA_WIDTH = 22
-LOC_DATA_WIDTH = 25
-FOLLOWER_DATA_WIDTH = 10
-REPO_DATA_WIDTH = 6
-STAR_DATA_WIDTH = 14
-STATS_SECONDARY_COLUMN_WIDTH = 34
-STATS_SECONDARY_SEPARATOR = " |  "
-TODAY_COMMITS_WIDTH = 18
-TODAY_PRS_WIDTH = 14
-TODAY_ISSUES_WIDTH = 17
-TODAY_REVIEWS_WIDTH = 11
+COMMIT_DATA_WIDTH = 35
+LOC_DATA_WIDTH = 32
+FOLLOWER_DATA_WIDTH = 33
+REPO_DATA_WIDTH = 20
+STAR_DATA_WIDTH = 37
+TODAY_COMMITS_WIDTH = 35
+TODAY_PRS_WIDTH = 39
+TODAY_ISSUES_WIDTH = 36
+TODAY_REVIEWS_WIDTH = 35
 
 QUERY_COUNT: dict[str, int] = {
     "user_getter": 0,
@@ -36,6 +34,7 @@ QUERY_COUNT: dict[str, int] = {
     "recursive_loc": 0,
     "loc_query": 0,
     "daily_contributions": 0,
+    "languages_query": 0,
 }
 
 HEADERS: dict[str, str] = {}

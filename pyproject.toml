@@ -8,6 +8,7 @@ dependencies = [
     "requests",
     "lxml",
     "python-dotenv",
+    "numpy>=2.2.6",
 ]
 
 [tool.ruff]
@@ -47,16 +48,8 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["profilegen"]
 
-[tool.basedpyright]
-pythonVersion = "3.10"
-typeCheckingMode = "standard"
-venvPath = "."
-venv = ".venv"
-reportMissingImports = true
-reportMissingTypeStubs = false
-
 [dependency-groups]
 dev = [
-    "basedpyright>=1.39.3",
     "ruff>=0.15.12",
+    "ty>=0.0.32",
 ]

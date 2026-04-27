@@ -13,6 +13,7 @@ from profilegen.github_api import (
     daily_contributions,
     follower_getter,
     graph_repos_stars,
+    languages_query,
     loc_query,
     user_getter,
 )
@@ -61,6 +62,12 @@ def main() -> None:
     today_data, today_time = perf_counter(daily_contributions, config.USER_NAME)
     print_duration("daily stats", today_time)
 
+    lang_data, lang_time = perf_counter(
+        languages_query,
+        ["OWNER", "COLLABORATOR", "ORGANIZATION_MEMBER"],
+    )
+    print_duration("languages", lang_time)
+
     if config.OWNER_ID == config.ARCHIVE_USER_ID:
         archived_data = add_archive()
         for index in range(len(total_loc) - 1):
@@ -79,6 +86,7 @@ def main() -> None:
         follower_data,
         total_loc[:-1],
         today_data,
+        lang_data,
     )
 
     total_runtime = (
@@ -91,6 +99,7 @@ def main() -> None:
         + contrib_time
         + follower_time
         + today_time
+        + lang_time
     )
     print(f"{'Total function time:':<21} {total_runtime:>11.4f} s")
     print(f"Total GitHub GraphQL API calls: {sum(config.QUERY_COUNT.values()):>3}")

@@ -183,6 +183,69 @@ def alltime_contributions(username: str) -> dict[str, int]:
     }
 
 
+def languages_query(owner_affiliation: list[str]) -> list[tuple[str, int, str]]:
+    """Fetch language byte counts and colors across all user repositories.
+
+    Args:
+        owner_affiliation: List of affiliation filters for the query.
+
+    Returns:
+        A list of ``(name, bytes, color)`` tuples sorted by bytes descending.
+    """
+    query = """
+    query ($owner_affiliation: [RepositoryAffiliation], $login: String!, $cursor: String) {
+        user(login: $login) {
+            repositories(first: 100, after: $cursor, ownerAffiliations: $owner_affiliation) {
+                edges {
+                    node {
+                        ... on Repository {
+                            languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
+                                edges {
+                                    node { name color }
+                                    size
+                                }
+                            }
+                        }
+                    }
+                }
+                pageInfo { endCursor hasNextPage }
+            }
+        }
+    }"""
+
+    cursor: str | None = None
+    lang_totals: dict[str, tuple[int, str]] = {}
+
+    while True:
+        config.query_count("languages_query")
+        variables: dict[str, Any] = {
+            "owner_affiliation": owner_affiliation,
+            "login": config.USER_NAME,
+            "cursor": cursor,
+        }
+        data = graphql_request("languages_query", query, variables)
+        repos = data["user"]["repositories"]
+
+        for edge in repos["edges"]:
+            for lang_edge in edge["node"]["languages"]["edges"]:
+                name = lang_edge["node"]["name"]
+                color = lang_edge["node"]["color"] or "#858585"
+                size = lang_edge["size"]
+                if name in lang_totals:
+                    prev_size, prev_color = lang_totals[name]
+                    lang_totals[name] = (prev_size + size, prev_color)
+                else:
+                    lang_totals[name] = (size, color)
+
+        if not repos["pageInfo"]["hasNextPage"]:
+            break
+        cursor = repos["pageInfo"]["endCursor"]
+
+    result = [(name, size, color) for name, (size, color) in lang_totals.items()]
+    result.sort(key=lambda x: x[1], reverse=True)
+    return result
+
+
 def _stars_counter(edges: list[dict[str, Any]]) -> int:
     """Sum the stargazer counts across a list of repository edges.
 
